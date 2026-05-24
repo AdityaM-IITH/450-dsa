@@ -106,6 +106,39 @@ def test_admin_dashboard_supports_search_and_pagination(monkeypatch):
     assert "Page 1 of 1" in body
 
 
+def test_admin_dashboard_load_more_logs_uses_incremental_cap(monkeypatch):
+    flask_app, test_db = create_test_app(monkeypatch)
+    admin_id = test_db.user.insert_one(
+        {
+            "name": "Admin",
+            "email": "admin@example.com",
+            "is_admin": True,
+            "progress": {},
+        }
+    ).inserted_id
+
+    seen_limits = []
+
+    def fake_recent_error_logs(max_entries=120):
+        seen_limits.append(max_entries)
+        return (
+            [{"source": "logs/app.log", "line": f"line {index}"} for index in range(max_entries)],
+            True,
+        )
+
+    monkeypatch.setattr(admin_routes, "_recent_error_logs", fake_recent_error_logs)
+
+    with flask_app.test_client() as client:
+        login_as(client, admin_id)
+        response = client.get("/admin?log_page=2")
+
+    body = response.data.decode("utf-8")
+    assert response.status_code == 200
+    assert seen_limits == [50]
+    assert "Showing the latest 50 log entries." in body
+    assert "Load More" in body
+
+
 def test_admin_cannot_delete_self(monkeypatch):
     flask_app, test_db = create_test_app(monkeypatch)
     admin_id = test_db.user.insert_one(

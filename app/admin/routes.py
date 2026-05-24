@@ -42,12 +42,15 @@ def _recent_error_logs(max_entries=120):
     existing.sort(key=lambda path: path.stat().st_mtime, reverse=True)
 
     entries = []
+    has_more = False
     per_file_limit = max(10, max_entries // max(1, len(existing)))
     for file_path in existing:
         try:
             lines = _tail_file(file_path, max_lines=per_file_limit)
         except OSError:
             continue
+        if len(lines) >= per_file_limit:
+            has_more = True
         rel_path = file_path.relative_to(root_dir).as_posix()
         for line in lines:
             text = line.rstrip("\n")
@@ -55,9 +58,9 @@ def _recent_error_logs(max_entries=120):
                 continue
             entries.append({"source": rel_path, "line": text})
             if len(entries) >= max_entries:
-                return entries
+                return entries, True
 
-    return entries
+    return entries, has_more
 
 
 def _compute_system_stats():
@@ -112,7 +115,10 @@ def _build_user_query(search_term):
 def dashboard():
     search_term = request.args.get("q", "").strip()
     page = max(_safe_int(request.args.get("page", 1), 1), 1)
+    log_page = max(_safe_int(request.args.get("log_page", 1), 1), 1)
     per_page = 10
+    log_page_size = 25
+    max_log_entries = min(log_page * log_page_size, 200)
     query_filter = _build_user_query(search_term)
 
     total_matching = db.user.count_documents(query_filter)
@@ -130,7 +136,7 @@ def dashboard():
     )
 
     stats = _compute_system_stats()
-    logs = _recent_error_logs(max_entries=80)
+    logs, has_more_logs = _recent_error_logs(max_entries=max_log_entries)
 
     return render_template(
         "admin/dashboard.html",
@@ -142,6 +148,9 @@ def dashboard():
         total_pages=total_pages,
         stats=stats,
         logs=logs,
+        log_page=log_page,
+        log_page_size=log_page_size,
+        has_more_logs=has_more_logs,
     )
 
 
