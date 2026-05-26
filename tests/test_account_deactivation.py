@@ -83,9 +83,15 @@ def test_login_reactivates_deactivated_password_user(monkeypatch):
     ).inserted_id
 
     with flask_app.test_client() as client:
+        with client.session_transaction() as session:
+            session["csrf_token"] = "login-token"
         response = client.post(
             "/login",
-            data={"email": "reactivate@example.com", "password": "StrongPass1!"},
+            data={
+                "email": "reactivate@example.com",
+                "password": "StrongPass1!",
+                "csrf_token": "login-token",
+            },
         )
 
     user_doc = test_db.user.find_one({"_id": user_id})
