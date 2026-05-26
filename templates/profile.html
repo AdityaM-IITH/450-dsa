@@ -634,24 +634,13 @@ window.handleSyncProfile = function(btn){
   });
 };
 
-// ── Chart & Visualization Code ──
 const dailyCounts = {{ daily_counts | tojson }};
 const heatmap = document.getElementById('heatmap');
-function exportChart(canvasId, filename) {
-  const canvas = document.getElementById(canvasId);
-  if (!canvas) return;
-  // Create a temporary canvas with white background
-  const tempCanvas = document.createElement('canvas');
-  tempCanvas.width = canvas.width;
-  tempCanvas.height = canvas.height;
-  const ctx = tempCanvas.getContext('2d');
-  ctx.fillStyle = '#1e2327'; // Dark background
-  ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-  ctx.drawImage(canvas, 0, 0);
-  const link = document.createElement('a');
-  link.download = filename;
-  link.href = tempCanvas.toDataURL('image/png');
-  link.click();
+function exportChart(id,file){
+  const c=document.getElementById(id);if(!c)return;
+  const o=document.createElement('canvas'),x=o.getContext('2d'),a=document.createElement('a');
+  o.width=c.width;o.height=c.height;x.fillStyle='#1e2327';x.fillRect(0,0,o.width,o.height);x.drawImage(c,0,0);
+  a.download=file;a.href=o.toDataURL('image/png');a.click();
 }
 function markChartReady(id){
   const shell = document.getElementById(id);
@@ -678,11 +667,10 @@ if(chartData.length > 0 && chartCanvas && typeof Chart !== 'undefined'){
   new Chart(chartCanvas,{
     type:'line',
     data:{labels:chartData.map(d=>d.x),datasets:[{data:chartData.map(d=>d.y),borderColor:'#f68b24',backgroundColor:'rgba(246,139,36,.15)',borderWidth:2,fill:true,tension:.4,pointRadius:ratingHistory.length>0?4:0,pointHoverRadius:6,pointBackgroundColor:'#f68b24'}]},
-    options:{responsive:true,maintainAspectRatio:false,animation:{duration:800,easing:'easeOutQuart'},interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(0,0,0,0.85)',titleFont:{size:13},bodyFont:{size:14,weight:'bold'},padding:12,cornerRadius:8,displayColors:true,callbacks:{title:items=>items[0].label,label:ctx=>ratingHistory.length>0?'Rating: '+ctx.raw:'Solved: '+ctx.raw}}},scales:{x:{grid:{display:false},ticks:{color:'#888',maxTicksLimit:5,font:{size:10}}},y:{grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#888',font:{size:10}}}}}
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{title:items=>items[0].label,label:ctx=>ratingHistory.length>0?'Rating: '+ctx.raw:'Solved: '+ctx.raw}}},scales:{x:{grid:{display:false},ticks:{color:'#888',maxTicksLimit:5,font:{size:10}}},y:{grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#888',font:{size:10}}}}}
   });
   markChartReady('progressChartShell');
 } else if(chartCanvas && typeof Chart !== 'undefined') {
-  // Show empty state inside canvas area
   const ctx = chartCanvas.getContext('2d');
   ctx.fillStyle = 'rgba(255,255,255,0.08)';
   ctx.fillRect(0,0,chartCanvas.width,chartCanvas.height);
@@ -696,14 +684,14 @@ if(chartData.length > 0 && chartCanvas && typeof Chart !== 'undefined'){
 const pData = {{ platforms | tojson }};
 try{new Chart(document.getElementById('platformsChart'),{
   type:'doughnut',
-  data:{labels:['LeetCode','GFG','Coding Ninjas','HackerRank','Other'],datasets:[{data:[pData['LeetCode'],pData['GFG'],pData['Coding Ninjas'],pData['HackerRank'],pData['Other']],backgroundColor:['#ffb800','#22c55e','#8b5cf6','#00bd6c','#6c757d'],borderWidth:0,hoverOffset:8,cutout:'78%'}]},
-  options:{responsive:true,maintainAspectRatio:false,animation:{animateScale:true,animateRotate:true,duration:1000},plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(0,0,0,0.85)',titleFont:{size:13},bodyFont:{size:14,weight:'bold'},padding:12,cornerRadius:8,displayColors:true}}}
+  data:{labels:['LeetCode','GFG','Coding Ninjas','HackerRank','Other'],datasets:[{data:[pData['LeetCode'],pData['GFG'],pData['Coding Ninjas'],pData['HackerRank'],pData['Other']],backgroundColor:['#ffb800','#22c55e','#8b5cf6','#00bd6c','#6c757d'],borderWidth:0,cutout:'78%'}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}
 }); markChartReady('platformsChartShell');}catch(e){console.warn('Chart.js load failed:',e); markChartReady('platformsChartShell');}
 
 try{new Chart(document.getElementById('difficultyChart'),{
   type:'doughnut',
-  data:{labels:['Easy','Medium','Hard'],datasets:[{data:[{{lc_easy}},{{lc_medium}},{{lc_hard}}],backgroundColor:['#00b8a3','#ffc01e','#ff375f'],borderWidth:0,hoverOffset:8,cutout:'78%'}]},
-  options:{responsive:true,maintainAspectRatio:false,animation:{animateScale:true,animateRotate:true,duration:1000,delay:200},plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(0,0,0,0.85)',titleFont:{size:13},bodyFont:{size:14,weight:'bold'},padding:12,cornerRadius:8,displayColors:true}}}
+  data:{labels:['Easy','Medium','Hard'],datasets:[{data:[{{lc_easy}},{{lc_medium}},{{lc_hard}}],backgroundColor:['#00b8a3','#ffc01e','#ff375f'],borderWidth:0,cutout:'78%'}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}
 }); markChartReady('difficultyChartShell');}catch(e){console.warn('Difficulty chart error:',e); markChartReady('difficultyChartShell');}
 
 function openSyncModal(){document.getElementById('syncModal').classList.add('open')}
